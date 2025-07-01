@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Distributor Lead Management Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        .custom-blue { background-color: #1e3a8a; }
+        .custom-blue-light { background-color: #3b82f6; }
+        .custom-red { background-color: #dc2626; }
+        .text-custom-blue { color: #1e3a8a; }
+        .text-custom-red { color: #dc2626; }
+        .border-custom-blue { border-color: #1e3a8a; }
+        .border-custom-red { border-color: #dc2626; }
+        .hover-custom-blue:hover { background-color: #1e40af; }
+        .hover-custom-red:hover { background-color: #b91c1c; }
+        .gradient-bg { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
+        
+        .status-new { background-color: #f3f4f6; color: #374151; }
+        .status-contacted { background-color: #dbeafe; color: #1e40af; }
+        .status-qualified { background-color: #fef3c7; color: #d97706; }
+        .status-proposal { background-color: #e0e7ff; color: #6366f1; }
+        .status-closed-won { background-color: #dcfce7; color: #16a34a; }
+        .status-closed-lost { background-color: #fecaca; color: #dc2626; }
+        
+        .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .card-hover:hover { transform: translateY(-2px); transition: transform 0.2s ease-in-out; }
+        
+        .notification { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            z-index: 1000; 
+            padding: 16px; 
+            border-radius: 8px; 
+            color: white; 
+            font-weight: 500;
+            display: none;
+        }
+        .notification.success { background-color: #16a34a; }
+        .notification.error { background-color: #dc2626; }
+        .notification.info { background-color: #3b82f6; }
+        
+        .page-section { min-height: 100vh; padding: 20px 0; }
+        .content-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        
+         {
+            .no-print { display: none !important; }
+            .page-section { page-break-inside: avoid; }
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        @media (max-width: 768px) {
+            .table-responsive table {
+                font-size: 14px;
+            }
+            .table-responsive th,
+            .table-responsive td {
+                padding: 8px 4px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        <span id="notificationText"></span>
+    </div>
+
+    <!-- Header -->
+    <header class="custom-blue text-white shadow-lg">
+        <div class="content-container">
+            <div class="flex items-center justify-between py-4">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-users-cog text-2xl"></i>
+                    <h1 class="text-xl font-bold">Lead Management Portal</h1>
+                </div>
+                <div id="userInfo" class="flex items-center space-x-4" style="display: none;">
+                    <span id="welcomeText" class="font-medium"></span>
+                    <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="content-container">
+        <!-- Login Section -->
+        <section id="loginSection" class="page-section flex items-center justify-center">
+            <div class="bg-white rounded-lg card-shadow p-8 w-full max-w-md">
+                <div class="text-center mb-8">
+                    <i class="fas fa-user-circle text-6xl text-custom-blue mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-800">Welcome Back</h2>
+                    <p class="text-gray-600">Sign in to your account</p>
+                </div>
+                
+                <form id="loginForm" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                        <input type="email" id="loginEmail" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input type="password" id="loginPassword" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <button type="submit" class="w-full custom-blue hover-custom-blue text-white py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Sign In
+                    </button>
+                </form>
+                
+                <div class="mt-6 text-center">
+                    <p class="text-gray-600">Don't have an account?</p>
+                    <button id="showRegisterBtn" class="text-custom-blue hover:underline font-medium">Register as Distributor</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Registration Section -->
+        <section id="registerSection" class="page-section flex items-center justify-center" style="display: none;">
+            <div class="bg-white rounded-lg card-shadow p-8 w-full max-w-md">
+                <div class="text-center mb-8">
+                    <i class="fas fa-user-plus text-6xl text-custom-blue mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-800">Distributor Registration</h2>
+                    <p class="text-gray-600">Create your account</p>
+                </div>
+                
+                <form id="registerForm" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                        <input type="text" id="registerName" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                        <input type="email" id="registerEmail" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+                        <input type="text" id="registerCompany" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                        <input type="tel" id="registerPhone" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                        <input type="password" id="registerPassword" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <button type="submit" class="w-full custom-blue hover-custom-blue text-white py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-user-plus mr-2"></i>Register
+                    </button>
+                </form>
+                
+                <div class="mt-6 text-center">
+                    <button id="showLoginBtn" class="text-custom-blue hover:underline font-medium">Back to Login</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Distributor Dashboard -->
+        <section id="distributorDashboard" class="page-section" style="display: none;">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Distributor Dashboard</h2>
+                <p class="text-gray-600">Manage your leads and track their progress</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Leads</p>
+                            <p id="totalLeads" class="text-2xl font-bold text-gray-900">0</p>
+                        </div>
+                        <i class="fas fa-users text-3xl text-custom-blue"></i>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">New</p>
+                            <p id="newLeads" class="text-2xl font-bold text-gray-700">0</p>
+                        </div>
+                        <i class="fas fa-plus-circle text-3xl text-gray-500"></i>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">In Progress</p>
+                            <p id="progressLeads" class="text-2xl font-bold text-blue-600">0</p>
+                        </div>
+                        <i class="fas fa-spinner text-3xl text-blue-500"></i>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Closed Won</p>
+                            <p id="wonLeads" class="text-2xl font-bold text-green-600">0</p>
+                        </div>
+                        <i class="fas fa-check-circle text-3xl text-green-500"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap gap-4 mb-8">
+                <button id="showLeadFormBtn" class="custom-blue hover-custom-blue text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Submit New Lead
+                </button>
+                <button id="refreshLeadsBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh
+                </button>
+            </div>
+
+            <!-- Lead Form -->
+            <div id="leadFormSection" class="bg-white rounded-lg card-shadow p-6 mb-8" style="display: none;">
+                <h3 class="text-xl font-bold text-gray-800 mb-6">Submit New Lead</h3>
+                <form id="leadForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Client Full Name *</label>
+                        <input type="text" id="clientName" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Client Email *</label>
+                        <input type="email" id="clientEmail" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Client Phone Number *</label>
+                        <input type="tel" id="clientPhone" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+                        <input type="text" id="clientCompany" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Industry</label>
+                        <select id="clientIndustry" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Select Industry</option>
+                            <option value="Technology">Technology</option>
+                            <option value="Healthcare">Healthcare</option>
+                            <option value="Finance">Finance</option>
+                            <option value="Manufacturing">Manufacturing</option>
+                            <option value="Retail">Retail</option>
+                            <option value="Education">Education</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Estimated Value</label>
+                        <input type="number" id="estimatedValue" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="0">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                        <textarea id="leadNotes" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Additional information about the lead..."></textarea>
+                    </div>
+                    
+                    <div class="md:col-span-2 flex gap-4">
+                        <button type="submit" class="custom-blue hover-custom-blue text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-paper-plane mr-2"></i>Submit Lead
+                        </button>
+                        <button type="button" id="cancelLeadFormBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-times mr-2"></i>Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Leads Table -->
+            <div class="bg-white rounded-lg card-shadow overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Your Submitted Leads</h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leadsTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Leads will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Dashboard -->
+        <section id="adminDashboard" class="page-section" style="display: none;">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Admin Dashboard</h2>
+                <p class="text-gray-600">Manage all leads and distributors</p>
+            </div>
+
+            <!-- Admin Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="text-center">
+                        <p class="text-sm font-medium text-gray-600">Total Leads</p>
+                        <p id="adminTotalLeads" class="text-2xl font-bold text-gray-900">0</p>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="text-center">
+                        <p class="text-sm font-medium text-gray-600">New</p>
+                        <p id="adminNewLeads" class="text-2xl font-bold text-gray-700">0</p>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="text-center">
+                        <p class="text-sm font-medium text-gray-600">In Progress</p>
+                        <p id="adminProgressLeads" class="text-2xl font-bold text-blue-600">0</p>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="text-center">
+                        <p class="text-sm font-medium text-gray-600">Closed Won</p>
+                        <p id="adminWonLeads" class="text-2xl font-bold text-green-600">0</p>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg card-shadow p-6">
+                    <div class="text-center">
+                        <p class="text-sm font-medium text-gray-600">Distributors</p>
+                        <p id="totalDistributors" class="text-2xl font-bold text-custom-blue">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Navigation -->
+            <div class="flex flex-wrap gap-4 mb-8">
+                <button id="showAllLeadsBtn" class="custom-blue hover-custom-blue text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fas fa-list mr-2"></i>All Leads
+                </button>
+                <button id="showDistributorsBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fas fa-users mr-2"></i>Manage Distributors
+                </button>
+                <button id="refreshAdminBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh
+                </button>
+            </div>
+
+            <!-- All Leads Section -->
+            <div id="allLeadsSection" class="bg-white rounded-lg card-shadow overflow-hidden mb-8">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800">All Leads Management</h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Distributor</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allLeadsTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- All leads will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Distributors Management Section -->
+            <div id="distributorsSection" class="bg-white rounded-lg card-shadow overflow-hidden" style="display: none;">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800">Distributors Management</h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Leads</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="distributorsTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Distributors will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Status Update Modal -->
+    <div id="statusModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Update Lead Status</h3>
+            <form id="statusUpdateForm">
+                <input type="hidden" id="statusLeadId">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select id="statusSelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="New">New</option>
+                        <option value="Contacted">Contacted</option>
+                        <option value="Qualified">Qualified</option>
+                        <option value="Proposal">Proposal Sent</option>
+                        <option value="Closed Won">Closed Won</option>
+                        <option value="Closed Lost">Closed Lost</option>
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                    <textarea id="statusNotes" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Add notes about this status update..."></textarea>
+                </div>
+                <div class="flex gap-4">
+                    <button type="submit" class="custom-blue hover-custom-blue text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-save mr-2"></i>Update Status
+                    </button>
+                    <button type="button" id="cancelStatusBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Data Management
+        class DataManager {
+            constructor() {
+                this.initializeData();
+            }
+            
+            initializeData() {
+                // Initialize default admin user
+                if (!localStorage.getItem('users')) {
+                    const defaultUsers = [
+                        {
+                            id: 'admin',
+                            email: 'mike@admin.com',
+                            password: 'admin123',
+                            name: 'Mike Admin',
+                            role: 'admin',
+                            status: 'approved',
+                            company: 'Admin',
+                            phone: '555-0000'
+                        }
+                    ];
+                    localStorage.setItem('users', JSON.stringify(defaultUsers));
+                }
+                
+                if (!localStorage.getItem('leads')) {
+                    localStorage.setItem('leads', JSON.stringify([]));
+                }
+            }
+            
+            getUsers() {
+                return JSON.parse(localStorage.getItem('users') || '[]');
+            }
+            
+            saveUsers(users) {
+                localStorage.setItem('users', JSON.stringify(users));
+            }
+            
+            getLeads() {
+                return JSON.parse(localStorage.getItem('leads') || '[]');
+            }
+            
+            saveLeads(leads) {
+                localStorage.setItem('leads', JSON.stringify(leads));
+            }
+            
+            getCurrentUser() {
+                const userId = localStorage.getItem('currentUserId');
+                if (!userId) return null;
+                return this.getUsers().find(user => user.id === userId);
+            }
+            
+            login(email, password) {
+                const users = this.getUsers();
+                const user = users.find(u => u.email === email && u.password === password);
+                if (user && user.status === 'approved') {
+                    localStorage.setItem('currentUserId', user.id);
+                    return user;
+                }
+                return null;
+            }
+            
+            logout() {
+                localStorage.removeItem('currentUserId');
+            }
+            
+            register(userData) {
+                const users = this.getUsers();
+                const newUser = {
+                    id: Date.now().toString(),
+                    ...userData,
+                    role: 'distributor',
+                    status: 'approved' // Auto-approve for demo
+                };
+                users.push(newUser);
+                this.saveUsers(users);
+                return newUser;
+            }
+            
+            addLead(leadData) {
+                const leads = this.getLeads();
+                const newLead = {
+                    id: Date.now().toString(),
+                    ...leadData,
+                    status: 'New',
+                    createdAt: new Date().toISOString(),
+                    lastUpdated: new Date().toISOString()
+                };
+                leads.push(newLead);
+                this.saveLeads(leads);
+                this.simulateEmailNotification(newLead);
+                return newLead;
+            }
+            
+            updateLeadStatus(leadId, status, notes) {
+                const leads = this.getLeads();
+                const leadIndex = leads.findIndex(l => l.id === leadId);
+                if (leadIndex !== -1) {
+                    leads[leadIndex].status = status;
+                    leads[leadIndex].lastUpdated = new Date().toISOString();
+                    if (notes) {
+                        leads[leadIndex].notes = (leads[leadIndex].notes || '') + '\n' + new Date().toLocaleString() + ': ' + notes;
+                    }
+                    this.saveLeads(leads);
+                    return leads[leadIndex];
+                }
+                return null;
+            }
+            
+            updateUserStatus(userId, status) {
+                const users = this.getUsers();
+                const userIndex = users.findIndex(u => u.id === userId);
+                if (userIndex !== -1) {
+                    users[userIndex].status = status;
+                    this.saveUsers(users);
+                    return users[userIndex];
+                }
+                return null;
+            }
+            
+            simulateEmailNotification(lead) {
+                // Simulate email notification to Mike
+                console.log('Email Notification Sent to Mike:');
+                console.log('Subject: New Lead Submitted');
+                console.log('Lead Details:', lead);
+                
+                // In a real application, this would send an actual email
+                this.showNotification('Lead submitted successfully! Mike has been notified via email.', 'success');
+            }
+            
+            showNotification(message, type = 'info') {
+                const notification = document.getElementById('notification');
+                const notificationText = document.getElementById('notificationText');
+                
+                notificationText.textContent = message;
+                notification.className = `notification ${type}`;
+                notification.style.display = 'block';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // UI Manager
+        class UIManager {
+            constructor(dataManager) {
+                this.dataManager = dataManager;
+                this.currentUser = null;
+                this.initializeEventListeners();
+                this.checkAuthStatus();
+            }
+            
+            initializeEventListeners() {
+                // Login form
+                document.getElementById('loginForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleLogin();
+                });
+                
+                // Register form
+                document.getElementById('registerForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleRegister();
+                });
+                
+                // Navigation
+                document.getElementById('showRegisterBtn').addEventListener('click', () => {
+                    this.showSection('registerSection');
+                });
+                
+                document.getElementById('showLoginBtn').addEventListener('click', () => {
+                    this.showSection('loginSection');
+                });
+                
+                document.getElementById('logoutBtn').addEventListener('click', () => {
+                    this.handleLogout();
+                });
+                
+                // Lead form
+                document.getElementById('showLeadFormBtn').addEventListener('click', () => {
+                    this.toggleLeadForm();
+                });
+                
+                document.getElementById('cancelLeadFormBtn').addEventListener('click', () => {
+                    this.hideLeadForm();
+                });
+                
+                document.getElementById('leadForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleLeadSubmission();
+                });
+                
+                // Admin navigation
+                document.getElementById('showAllLeadsBtn').addEventListener('click', () => {
+                    this.showAllLeads();
+                });
+                
+                document.getElementById('showDistributorsBtn').addEventListener('click', () => {
+                    this.showDistributors();
+                });
+                
+                // Refresh buttons
+                document.getElementById('refreshLeadsBtn').addEventListener('click', () => {
+                    this.loadDistributorDashboard();
+                });
+                
+                document.getElementById('refreshAdminBtn').addEventListener('click', () => {
+                    this.loadAdminDashboard();
+                });
+                
+                // Status modal
+                document.getElementById('statusUpdateForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleStatusUpdate();
+                });
+                
+                document.getElementById('cancelStatusBtn').addEventListener('click', () => {
+                    this.hideStatusModal();
+                });
+            }
+            
+            checkAuthStatus() {
+                this.currentUser = this.dataManager.getCurrentUser();
+                if (this.currentUser) {
+                    this.showDashboard();
+                } else {
+                    this.showSection('loginSection');
+                }
+            }
+            
+            showSection(sectionId) {
+                const sections = ['loginSection', 'registerSection', 'distributorDashboard', 'adminDashboard'];
+                sections.forEach(section => {
+                    document.getElementById(section).style.display = 'none';
+                });
+                document.getElementById(sectionId).style.display = 'block';
+                
+                // Show/hide user info
+                document.getElementById('userInfo').style.display = 
+                    ['distributorDashboard', 'adminDashboard'].includes(sectionId) ? 'flex' : 'none';
+            }
+            
+            handleLogin() {
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                const user = this.dataManager.login(email, password);
+                if (user) {
+                    this.currentUser = user;
+                    this.showDashboard();
+                    this.dataManager.showNotification(`Welcome back, ${user.name}!`, 'success');
+                } else {
+                    this.dataManager.showNotification('Invalid credentials or account not approved', 'error');
+                }
+            }
+            
+            handleRegister() {
+                const userData = {
+                    name: document.getElementById('registerName').value,
+                    email: document.getElementById('registerEmail').value,
+                    company: document.getElementById('registerCompany').value,
+                    phone: document.getElementById('registerPhone').value,
+                    password: document.getElementById('registerPassword').value
+                };
+                
+                try {
+                    const newUser = this.dataManager.register(userData);
+                    this.dataManager.showNotification('Registration successful! You can now login.', 'success');
+                    this.showSection('loginSection');
+                    document.getElementById('registerForm').reset();
+                } catch (error) {
+                    this.dataManager.showNotification('Registration failed. Please try again.', 'error');
+                }
+            }
+            
+            handleLogout() {
+                this.dataManager.logout();
+                this.currentUser = null;
+                this.showSection('loginSection');
+            }
+            
+            showDashboard() {
+                document.getElementById('welcomeText').textContent = `Welcome, ${this.currentUser.name}`;
+                
+                if (this.currentUser.role === 'admin') {
+                    this.showSection('adminDashboard');
+                    this.loadAdminDashboard();
+                } else {
+                    this.showSection('distributorDashboard');
+                    this.loadDistributorDashboard();
+                }
+            }
+            
+            loadDistributorDashboard() {
+                const leads = this.dataManager.getLeads().filter(lead => lead.distributorId === this.currentUser.id);
+                this.updateDistributorStats(leads);
+                this.populateLeadsTable(leads);
+            }
+            
+            updateDistributorStats(leads) {
+                document.getElementById('totalLeads').textContent = leads.length;
+                document.getElementById('newLeads').textContent = leads.filter(l => l.status === 'New').length;
+                document.getElementById('progressLeads').textContent = leads.filter(l => ['Contacted', 'Qualified', 'Proposal'].includes(l.status)).length;
+                document.getElementById('wonLeads').textContent = leads.filter(l => l.status === 'Closed Won').length;
+            }
+            
+            populateLeadsTable(leads) {
+                const tbody = document.getElementById('leadsTableBody');
+                tbody.innerHTML = '';
+                
+                leads.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).forEach(lead => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${lead.clientName}</div>
+                            <div class="text-sm text-gray-500">${lead.clientEmail}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${lead.clientCompany || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${lead.clientPhone}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">$${lead.estimatedValue || 0}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full status-${lead.status.toLowerCase().replace(' ', '-')}">${lead.status}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(lead.createdAt).toLocaleDateString()}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            
+            loadAdminDashboard() {
+                const leads = this.dataManager.getLeads();
+                const users = this.dataManager.getUsers().filter(u => u.role === 'distributor');
+                
+                this.updateAdminStats(leads, users);
+                this.populateAllLeadsTable(leads);
+                this.populateDistributorsTable(users);
+            }
+            
+            updateAdminStats(leads, distributors) {
+                document.getElementById('adminTotalLeads').textContent = leads.length;
+                document.getElementById('adminNewLeads').textContent = leads.filter(l => l.status === 'New').length;
+                document.getElementById('adminProgressLeads').textContent = leads.filter(l => ['Contacted', 'Qualified', 'Proposal'].includes(l.status)).length;
+                document.getElementById('adminWonLeads').textContent = leads.filter(l => l.status === 'Closed Won').length;
+                document.getElementById('totalDistributors').textContent = distributors.length;
+            }
+            
+            populateAllLeadsTable(leads) {
+                const tbody = document.getElementById('allLeadsTableBody');
+                tbody.innerHTML = '';
+                
+                const users = this.dataManager.getUsers();
+                
+                leads.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).forEach(lead => {
+                    const distributor = users.find(u => u.id === lead.distributorId);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${lead.clientName}</div>
+                            <div class="text-sm text-gray-500">${lead.clientEmail}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${distributor ? distributor.name : 'Unknown'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${lead.clientPhone}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">$${lead.estimatedValue || 0}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full status-${lead.status.toLowerCase().replace(' ', '-')}">${lead.status}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="uiManager.showStatusModal('${lead.id}')" class="text-indigo-600 hover:text-indigo-900 mr-3">
+                                <i class="fas fa-edit"></i> Update
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            
+            populateDistributorsTable(distributors) {
+                const tbody = document.getElementById('distributorsTableBody');
+                tbody.innerHTML = '';
+                
+                const leads = this.dataManager.getLeads();
+                
+                distributors.forEach(distributor => {
+                    const distributorLeads = leads.filter(l => l.distributorId === distributor.id);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${distributor.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${distributor.email}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${distributor.company}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${distributor.phone}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full ${distributor.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">${distributor.status}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${distributorLeads.length}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            ${distributor.status === 'pending' ? 
+                                `<button onclick="uiManager.approveDistributor('${distributor.id}')" class="text-green-600 hover:text-green-900 mr-3">
+                                    <i class="fas fa-check"></i> Approve
+                                </button>` : 
+                                `<button onclick="uiManager.toggleDistributorStatus('${distributor.id}')" class="text-red-600 hover:text-red-900">
+                                    <i class="fas fa-ban"></i> Disable
+                                </button>`
+                            }
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            
+            toggleLeadForm() {
+                const formSection = document.getElementById('leadFormSection');
+                formSection.style.display = formSection.style.display === 'none' ? 'block' : 'none';
+            }
+            
+            hideLeadForm() {
+                document.getElementById('leadFormSection').style.display = 'none';
+                document.getElementById('leadForm').reset();
+            }
+            
+            handleLeadSubmission() {
+                const leadData = {
+                    clientName: document.getElementById('clientName').value,
+                    clientEmail: document.getElementById('clientEmail').value,
+                    clientPhone: document.getElementById('clientPhone').value,
+                    clientCompany: document.getElementById('clientCompany').value,
+                    clientIndustry: document.getElementById('clientIndustry').value,
+                    estimatedValue: document.getElementById('estimatedValue').value,
+                    notes: document.getElementById('leadNotes').value,
+                    distributorId: this.currentUser.id
+                };
+                
+                this.dataManager.addLead(leadData);
+                this.hideLeadForm();
+                this.loadDistributorDashboard();
+            }
+            
+            showAllLeads() {
+                document.getElementById('allLeadsSection').style.display = 'block';
+                document.getElementById('distributorsSection').style.display = 'none';
+            }
+            
+            showDistributors() {
+                document.getElementById('allLeadsSection').style.display = 'none';
+                document.getElementById('distributorsSection').style.display = 'block';
+            }
+            
+            showStatusModal(leadId) {
+                document.getElementById('statusLeadId').value = leadId;
+                document.getElementById('statusModal').style.display = 'flex';
+            }
+            
+            hideStatusModal() {
+                document.getElementById('statusModal').style.display = 'none';
+                document.getElementById('statusUpdateForm').reset();
+            }
+            
+            handleStatusUpdate() {
+                const leadId = document.getElementById('statusLeadId').value;
+                const status = document.getElementById('statusSelect').value;
+                const notes = document.getElementById('statusNotes').value;
+                
+                this.dataManager.updateLeadStatus(leadId, status, notes);
+                this.hideStatusModal();
+                this.loadAdminDashboard();
+                this.dataManager.showNotification('Lead status updated successfully!', 'success');
+            }
+            
+            approveDistributor(userId) {
+                this.dataManager.updateUserStatus(userId, 'approved');
+                this.loadAdminDashboard();
+                this.dataManager.showNotification('Distributor approved successfully!', 'success');
+            }
+            
+            toggleDistributorStatus(userId) {
+                this.dataManager.updateUserStatus(userId, 'disabled');
+                this.loadAdminDashboard();
+                this.dataManager.showNotification('Distributor status updated!', 'info');
+            }
+        }
+
+        // Initialize Application
+        const dataManager = new DataManager();
+        const uiManager = new UIManager(dataManager);
+        
+        // Auto-refresh every 30 seconds for real-time updates
+        setInterval(() => {
+            if (uiManager.currentUser) {
+                if (uiManager.currentUser.role === 'admin') {
+                    uiManager.loadAdminDashboard();
+                } else {
+                    uiManager.loadDistributorDashboard();
+                }
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
+    <script id="html_badge_script1">
+        window.__genspark_remove_badge_link = "https://www.genspark.ai/api/html_badge/" +
+            "remove_badge?token=To%2FBnjzloZ3UfQdcSaYfDieQMIuCJi%2F7fGQQQQDrMXvaQ0YmsfQHKV8D850skIfGrdYiLst5%2FF6eXDGyau08oxt3peCAU%2BSwXlGzL09hfnaQswWVlO8LYW1nL93DS9IV2DGwO9DO3cvErOAMLhRVD6IUCvHepj%2BVm1itATdiNcDvn1w1gbTqOy5SSHmEcduOIr0AAmCpGDOFVjAJdDaTbmYUg0lEuUYOS5EIYDsrksP%2F%2BopEL39NxZWv2%2Bp4JaEDRNYMGW%2FP1YO8rtypZAP7x6adF7aiN6IoFh%2Bko8fWfGwa8PR9mw%2BUci92o6XVvjLoWrvBlV%2Ff%2Fyo7xFP6fQgR6CmYL60x%2F42mKqLpo5rTvwmgIP0dBfiur0ouEd3kpx%2F47UUGwUboeSZRR%2BUWAx6Qf59agYpNCJsOpwVTpMt2w4m8oM7YRHistfVsItkItTyDIDm3nBjmFpr8wF7QW7VXtUib8Mrd65h7WVH6CSmVHhmUnZA%2Bn6gZ1E4nK4Uiuy8REgB%2FoJM5auKksrLQ%2Bv08ddhA5xbTIM2uqm99GEVHSEE%3D";
+        window.__genspark_locale = "es-ES";
+        window.__genspark_token = "To/BnjzloZ3UfQdcSaYfDieQMIuCJi/7fGQQQQDrMXvaQ0YmsfQHKV8D850skIfGrdYiLst5/F6eXDGyau08oxt3peCAU+SwXlGzL09hfnaQswWVlO8LYW1nL93DS9IV2DGwO9DO3cvErOAMLhRVD6IUCvHepj+Vm1itATdiNcDvn1w1gbTqOy5SSHmEcduOIr0AAmCpGDOFVjAJdDaTbmYUg0lEuUYOS5EIYDsrksP/+opEL39NxZWv2+p4JaEDRNYMGW/P1YO8rtypZAP7x6adF7aiN6IoFh+ko8fWfGwa8PR9mw+Uci92o6XVvjLoWrvBlV/f/yo7xFP6fQgR6CmYL60x/42mKqLpo5rTvwmgIP0dBfiur0ouEd3kpx/47UUGwUboeSZRR+UWAx6Qf59agYpNCJsOpwVTpMt2w4m8oM7YRHistfVsItkItTyDIDm3nBjmFpr8wF7QW7VXtUib8Mrd65h7WVH6CSmVHhmUnZA+n6gZ1E4nK4Uiuy8REgB/oJM5auKksrLQ+v08ddhA5xbTIM2uqm99GEVHSEE=";
+    </script>
+    
+    <script id="html_notice_dialog_script" src="https://www.genspark.ai/notice_dialog.js"></script>
+    
